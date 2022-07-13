@@ -3,6 +3,7 @@
 namespace App\Cart;
 
 use App\Cart\Contracts\CartInterface;
+use App\Cart\Exceptions\QuantityNoLongerAvailableException;
 use App\Models\User;
 use App\Models\Variation;
 use Illuminate\Session\SessionManager;
@@ -54,6 +55,13 @@ class Cart implements CartInterface
         return money($this->subtotal());
     }
 
+
+
+    protected function clearInstanceCache()
+    {
+        $this->instance = null;
+    }
+
     protected function instance()
     {
         if ($this->instance) {
@@ -70,6 +78,43 @@ class Cart implements CartInterface
             ->first();
     }
 
+    public function verifyAvailableQuantities()
+    {
+        $this->instance()->variations->each(function ($variation) {
+            if ($variation->pivot->quantity > $variation->stocks->sum('amount')) {
+                throw new QuantityNoLongerAvailableException('Stock reduced');
+            }
+        });
+    }
+
+    public function syncedAvailableQuantities()
+    {
+        $syncedQuantities = $this->instance()->variations->mapWithKeys(function ($variation) {
+            $quantity = $variation->pivot->quantity > $variation->stocks->sum('count')
+                ? $variation->stockCount()
+                : $variation->pivot->quantity;
+
+            return [
+                $variation->id => [
+                    'quantity' => $quantity,
+                ],
+            ];
+        })->reject(function ($syncedQuantity) {
+            return $syncedQuantity['quantity'] === 0;
+        })->toArray();
+
+        $this->instance()->variations()->sync($syncedQuantities);
+
+        $this->clearInstanceCache();
+    }
+
+    public function changeQuantity(Variation $variation, $quantity)
+    {
+        $this->instance()->variations()->updateExistingPivot($variation->id, [
+            'quantity' => min($quantity, $variation->stockCount())
+        ]);
+    }
+
     public function add(Variation $variation, $quantity = 1)
     {
         if ($existingVariation = $this->getVariation($variation)) {
@@ -80,13 +125,6 @@ class Cart implements CartInterface
             $variation->id => [
                 'quantity' => min($quantity, $variation->stockCount())
             ]
-        ]);
-    }
-
-    public function changeQuantity(Variation $variation, $quantity)
-    {
-        $this->instance()->variations()->updateExistingPivot($variation->id, [
-            'quantity' => min($quantity, $variation->stockCount())
         ]);
     }
 

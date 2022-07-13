@@ -101,7 +101,7 @@
                                     {{ $variation->formattedPrice() }}
                                 </div>
                                 <div class="space-y-1">
-                                    <div>{{ $variation->name }}</div>
+                                    <div>{{ $variation->product->name }}</div>
 
                                     <div class="flex items-center text-sm">
                                         <div class="mr-1 font-semibold">

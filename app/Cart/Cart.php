@@ -115,6 +115,11 @@ class Cart implements CartInterface
         ]);
     }
 
+    public function removeAll()
+    {
+        $this->instance()->variations()->detach();
+    }
+
     public function add(Variation $variation, $quantity = 1)
     {
         if ($existingVariation = $this->getVariation($variation)) {

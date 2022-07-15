@@ -19,6 +19,8 @@ class CheckoutIndexController extends Controller
         try {
             $cart->verifyAvailableQuantities();
         } catch (QuantityNoLongerAvailableException $e) {
+            session()->flash('notification', 'Some items or quantities in your cart have become unavailable.');
+
             $cart->syncedAvailableQuantities();
         }
 

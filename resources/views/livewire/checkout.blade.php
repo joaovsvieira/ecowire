@@ -24,13 +24,35 @@
 >
     <div class="overflow-hidden sm:rounded-lg grid grid-cols-6 grid-flow-col gap-4">
         <div class="p-6 bg-white border-b border-gray-200 col-span-3 self-start space-y-6">
+            <!-- Email -->
             @guest
                 <div class="space-y-3">
                     <div class="font-semibold text-lg">Account details</div>
+                    <div>
+                        <label for="customerName">Name</label>
+                        <x-input id="customerName" class="block mt-1 w-full" type="text" name="customerName" wire:model.defer="accountForm.name" />
+
+                        @error ('accountForm.name')
+                            <div class="mt-2 font-semibold text-red-500">
+                                {{ $message }}
+                            </div>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label for="customerCpfCnpj">CPF/CNPJ</label>
+                        <x-input id="customerCpfCnpj" class="block mt-1 w-full" type="text" name="customerCpfCnpj" wire:model.defer="accountForm.cpf_cnpj" />
+
+                        @error ('accountForm.cpf_cnpj')
+                            <div class="mt-2 font-semibold text-red-500">
+                                {{ $message }}
+                            </div>
+                        @enderror
+                    </div>
 
                     <div>
                         <label for="email">Email</label>
-                        <x-input id="email" class="block mt-1 w-full" type="text" name="email" wire:model.defer="accountForm.email" />
+                        <x-input id="email" class="block mt-1 w-full" type="email" name="email" wire:model.defer="accountForm.email" />
 
                         @error ('accountForm.email')
                             <div class="mt-2 font-semibold text-red-500">
@@ -105,26 +127,83 @@
                 <div class="font-semibold text-lg">Payment</div>
 
                 <div>
-                    {{ $paymentIntent->uuid }}
-                    <fieldset>
-                        <legend class="block text-sm font-medium text-gray-700">Card Details</legend>
-                        <div class="mt-1 bg-white rounded-md shadow-sm -space-y-px">
-                            <div>
-                                <label for="card-number" class="sr-only">Card number</label>
-                                <input type="text" name="card-number" id="card-number" class="focus:ring-indigo-500 focus:border-indigo-500 relative block w-full rounded-none rounded-t-md bg-transparent focus:z-10 sm:text-sm border-gray-300" placeholder="Card number">
-                            </div>
-                            <div class="flex -space-x-px">
-                                <div class="w-1/2 flex-1 min-w-0">
-                                    <label for="card-expiration-date" class="sr-only">Expiration date</label>
-                                    <input type="text" name="card-expiration-date" id="card-expiration-date" class="focus:ring-indigo-500 focus:border-indigo-500 relative block w-full rounded-none rounded-bl-md bg-transparent focus:z-10 sm:text-sm border-gray-300" placeholder="MM / YY">
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <label for="card-cvc" class="sr-only">CVC</label>
-                                    <input type="text" name="card-cvc" id="card-cvc" class="focus:ring-indigo-500 focus:border-indigo-500 relative block w-full rounded-none rounded-br-md bg-transparent focus:z-10 sm:text-sm border-gray-300" placeholder="CVC">
-                                </div>
-                            </div>
+                    <div class="space-y-4 sm:flex sm:items-center sm:space-y-0 sm:space-x-10">
+                        <div class="flex items-center">
+                            <input id="card" value="card" wire:model="paymentType" type="radio" checked="" class="focus:ring-indigo-500 h-5 w-5 text-indigo-600 border-gray-300">
+                            <label for="card" class="ml-3 block text-sm font-medium text-gray-700">
+                                Cartão de crédito
+                            </label>
                         </div>
-                    </fieldset>
+
+                        <div class="flex items-center">
+                            <input id="pix" value="pix" wire:model="paymentType" type="radio" class="focus:ring-indigo-500 h-5 w-5 text-indigo-600 border-gray-300">
+                            <label for="pix" class="ml-3 block text-sm font-medium text-gray-700">
+                                PIX
+                            </label>
+                        </div>
+
+                        <div class="flex items-center">
+                            <input id="boleto" value="boleto" wire:model="paymentType" type="radio" class="focus:ring-indigo-500 h-5 w-5 text-indigo-600 border-gray-300">
+                            <label for="boleto" class="ml-3 block text-sm font-medium text-gray-700">
+                                Boleto
+                            </label>
+                        </div>
+                    </div>
+
+                    @error ('paymentType')
+                        <div class="mt-2 font-semibold text-red-500">
+                            {{ $message }}
+                        </div>
+                    @enderror
+
+                    @if ($paymentType == 'card')
+                        <fieldset>
+                            <div class="mt-4 bg-white rounded-md shadow-sm -space-y-px">
+                                <div>
+                                    <label for="cardNumber" class="sr-only">Card number</label>
+                                    <input type="tel" wire:model.defer="cardElement.number" id="cardNumber" class="focus:ring-indigo-500 focus:border-indigo-500 relative block w-full rounded-none rounded-t-md bg-transparent focus:z-10 border-gray-300" placeholder="Card number">
+                                </div>
+                                <div class="flex -space-x-px">
+                                    <div class="w-1/2 flex-1 min-w-0">
+                                        <label for="cardExpiryMonth" class="sr-only">Expiration date</label>
+                                        <input type="text" wire:model.defer="cardElement.expiry_month" id="cardExpiryMonth" class="focus:ring-indigo-500 focus:border-indigo-500 relative block w-full rounded-none rounded-bl-md bg-transparent focus:z-10 border-gray-300" placeholder="MM">
+                                    </div>
+                                    <div class="w-1/2 flex-1 min-w-0">
+                                        <label for="cardExpiryYear" class="sr-only">Expiration date</label>
+                                        <input type="text" wire:model.defer="cardElement.expiry_year" id="cardExpiryYear" class="focus:ring-indigo-500 focus:border-indigo-500 relative block w-full rounded-none rounded-bl-md bg-transparent focus:z-10 border-gray-300" placeholder="YYYY">
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <label for="cardCvv" class="sr-only">CVV</label>
+                                        <input type="tel" wire:model.defer="cardElement.cvv" id="cardCvv" class="focus:ring-indigo-500 focus:border-indigo-500 relative block w-full rounded-none rounded-br-md bg-transparent focus:z-10 border-gray-300" placeholder="CVV">
+                                    </div>
+                                </div>
+
+                                @error ('cardElement.number')
+                                    <div class="mt-2 font-semibold text-red-500">
+                                        {{ $message }}
+                                    </div>
+                                @enderror
+
+                                @error ('cardElement.expiry_month')
+                                    <div class="mt-2 font-semibold text-red-500">
+                                        {{ $message }}
+                                    </div>
+                                @enderror
+
+                                @error ('cardElement.expiry_year')
+                                    <div class="mt-2 font-semibold text-red-500">
+                                        {{ $message }}
+                                    </div>
+                                @enderror
+
+                                @error ('cardElement.cvv')
+                                    <div class="mt-2 font-semibold text-red-500">
+                                        {{ $message }}
+                                    </div>
+                                @enderror
+                            </div>
+                        </fieldset>
+                    @endif
                 </div>
             </div>
         </div>

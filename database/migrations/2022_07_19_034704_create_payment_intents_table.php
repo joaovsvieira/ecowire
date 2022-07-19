@@ -48,7 +48,7 @@ return new class extends Migration
 
             $table->string('metadata')->nullable();
 
-            $table->string('status')->nullable();
+            $table->string('status')->default('requires_action');
 
             $table->timestamps();
             $table->softDeletes();

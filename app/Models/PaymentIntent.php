@@ -67,7 +67,8 @@ class PaymentIntent extends Model
     public function getFormattedAttributes()
     {
         return [
-            'amount'  => $this->amount,
+            // TODO: encontrar uma forma de deixar a currency dinamica
+            'amount'  => floatval(str_replace('R$', '', money($this->amount))),
             'order_id'  => $this->order_id,
             'callback_url'  => $this->callback_url,
             'payment' => [
@@ -99,6 +100,7 @@ class PaymentIntent extends Model
                 'birthdate' => $this->customer_birthdate,
                 'ip' => $this->customer_ip,
             ],
+            'status'   => $this->status,
         ];
     }
 }

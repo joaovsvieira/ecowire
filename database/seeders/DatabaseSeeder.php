@@ -70,6 +70,9 @@ class DatabaseSeeder extends Seeder
         ];
         Product::insert($products);
 
+        $product1 = Product::find(1);
+        $product1->categories()->attach(2);
+
         $shipping_types = [
             [
                 'name' => 'UPS Free',

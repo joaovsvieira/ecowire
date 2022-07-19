@@ -20,6 +20,7 @@ class PaymentIntent extends Model
     const STATUS_SUCCEEDED = 'succeeded';
 
     protected $fillable = [
+        'ipag_id',
         'amount',
         'order_id',
         'callback_url',
@@ -38,6 +39,7 @@ class PaymentIntent extends Model
         'card_token',
         'card_tokenize',
         'boleto_due_date',
+        'boleto_instructions',
         'customer_name',
         'customer_cpf_cnpj',
         'customer_email',
@@ -45,10 +47,12 @@ class PaymentIntent extends Model
         'customer_birthdate',
         'customer_ip',
         'status',
+        'pix_url',
         'metadata',
     ];
 
     protected $casts = [
+        'boleto_instructions' => 'array',
         'metadata' => 'json',
     ];
 
@@ -57,6 +61,11 @@ class PaymentIntent extends Model
         static::creating(function (PaymentIntent $paymentIntent) {
             $paymentIntent->uuid = (string) Str::uuid();
         });
+    }
+
+    public function order()
+    {
+        return $this->belongsTo(Order::class);
     }
 
     public function cart()
@@ -68,6 +77,7 @@ class PaymentIntent extends Model
     {
         return [
             // TODO: encontrar uma forma de deixar a currency dinamica
+            'ipag_id' => $this->ipag_id,
             'amount'  => floatval(str_replace('R$', '', money($this->amount))),
             'order_id'  => $this->order_id,
             'callback_url'  => $this->callback_url,
@@ -89,7 +99,8 @@ class PaymentIntent extends Model
                     'tokenize' => $this->card_tokenize,
                 ],
                 'boleto' => [
-                    'due_date' => $this->boleto_due_date,
+                    'due_date'     => $this->boleto_due_date,
+                    'instructions' => $this->boleto_instructions,
                 ]
             ],
             'customer' => [
@@ -101,6 +112,7 @@ class PaymentIntent extends Model
                 'ip' => $this->customer_ip,
             ],
             'status'   => $this->status,
+            'pix_url'  => $this->pix_url,
         ];
     }
 }

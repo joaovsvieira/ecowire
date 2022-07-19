@@ -17,8 +17,10 @@ return new class extends Migration
             $table->id();
             $table->uuid();
 
+            $table->string('ipag_id')->nullable();
+
             $table->integer('amount')->nullable()->unsigned();
-            $table->string('order_id')->nullable();
+            $table->foreignId('order_id')->nullable()->constrained();
             $table->string('callback_url')->nullable();
 
             $table->string('payment_type')->nullable();
@@ -38,6 +40,7 @@ return new class extends Migration
             $table->string('card_tokenize')->nullable();
 
             $table->string('boleto_due_date')->nullable();
+            $table->string('boleto_instructions')->nullable();
 
             $table->string('customer_name')->nullable();
             $table->string('customer_cpf_cnpj')->nullable();
@@ -49,6 +52,7 @@ return new class extends Migration
             $table->string('metadata')->nullable();
 
             $table->string('status')->default('requires_action');
+            $table->string('pix_url')->nullable();
 
             $table->timestamps();
             $table->softDeletes();

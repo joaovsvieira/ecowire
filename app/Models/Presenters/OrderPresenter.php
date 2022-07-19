@@ -12,9 +12,10 @@ class OrderPresenter
     {
         return match ($this->order->status()) {
             'placed_at' => 'Order placed',
-            'packaged_at' => 'Order packaged',
-            'shipped_at' => 'Order shipped',
-            default => ''
+            'packaged_at'  => 'Order packaged',
+            'shipped_at'   => 'Order shipped',
+            'delivered_at' => 'Order delivered',
+            default => 'Order processing'
         };
     }
 }

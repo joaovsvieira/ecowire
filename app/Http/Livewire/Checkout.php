@@ -3,6 +3,7 @@
 namespace App\Http\Livewire;
 
 use App\Cart\Contracts\CartInterface;
+use App\Events\Payments\CapturePayment;
 use App\Mail\OrderCreated;
 use App\Models\Order;
 use App\Models\PaymentIntent;
@@ -115,7 +116,7 @@ class Checkout extends Component
     /**
      * Realiza a ação de pagamento
      */
-    public function confirmPayment($paymentIntentId, $params, CartInterface $cart)
+    public function confirmPayment(CartInterface $cart)
     {
         $paymentIntent = $this->getPaymentIntent($cart);
 
@@ -123,10 +124,12 @@ class Checkout extends Component
 
         if (isset($response['id'])) {
             $paymentIntent->update([
-                'status' => $paymentIntent->payment_type == 'card' ? 'requires_capture' :
+                'ipag_id' => $response['id'],
+                'status'  => $paymentIntent->payment_type == 'card' ? 'requires_capture' :
                         ($paymentIntent->payment_type == 'pix' ? 'requires_confirmation' :
                             ($paymentIntent->payment_type == 'boleto' ? 'requires_confirmation' : 'requires_payment_method')
                         ),
+                'pix_url' => $paymentIntent->payment_type == 'pix' ? $response['attributes']['pix']['qrcode'] : null,
             ]);
 
             return $this->checkout($cart);
@@ -160,6 +163,11 @@ class Checkout extends Component
                     'card_expiry_year'  => $this->paymentType == 'card' ? $this->cardElement['expiry_year'] : null,
                     'card_cvv' => $this->paymentType == 'card' ? $this->cardElement['cvv'] : null,
 
+                    'boleto_due_date' => $this->paymentType == 'boleto' ? date('Y-m-d', strtotime(now()->addDays(5))) : null,
+                    'boleto_instructions' => [
+                        'Sr. Caixa não receber após o vencimento',
+                    ],
+
                     'customer_name'     => $this->accountForm['name'],
                     'customer_cpf_cnpj' => $this->accountForm['cpf_cnpj'],
                 ]);
@@ -179,6 +187,11 @@ class Checkout extends Component
             'card_expiry_month' => $this->paymentType == 'card' ? $this->cardElement['expiry_month'] : null,
             'card_expiry_year'  => $this->paymentType == 'card' ? $this->cardElement['expiry_year'] : null,
             'card_cvv' => $this->paymentType == 'card' ? $this->cardElement['cvv'] : null,
+
+            'boleto_due_date' => $this->paymentType == 'boleto' ? now()->addDays(5) : null,
+            'boleto_instructions' => [
+                'Sr. Caixa não receber após o vencimento',
+            ],
 
             'customer_name'     => $this->accountForm['name'],
             'customer_cpf_cnpj' => $this->accountForm['cpf_cnpj'],
@@ -205,10 +218,6 @@ class Checkout extends Component
 
             return;
         }
-
-        dd($this->getPaymentIntent($cart)->status);
-
-        // cartão: captura / boleto e pix: aguarda pagamento
 
         $this->shippingAddress = ShippingAddress::query();
 
@@ -243,6 +252,11 @@ class Checkout extends Component
             ->toArray()
         );
 
+        $paymentIntent = PaymentIntent::find($cart->getPaymentIntentId());
+        $paymentIntent->update([
+            'order_id' => $order->id,
+        ]);
+
         $cart->contents()->each(function ($variation) {
             $variation->stocks()->create([
                 'amount' => 0 - $variation->pivot->quantity,
@@ -253,14 +267,18 @@ class Checkout extends Component
 
         $cart->destroy();
 
-        // TODO: disparar um evento
-        Mail::to($order->email)->send(new OrderCreated($order));
+        if ($this->getPaymentIntent($cart)->status == 'requires_capture') {
+            event(new CapturePayment($order));
 
-        if (!auth()->user()) {
-            return redirect()->route('orders.confirmation', $order);
+            if (!auth()->user()) {
+                return redirect()->route('orders.confirmation', $order);
+            }
+
+            return redirect()->route('orders');
+
         }
 
-        return redirect()->route('orders');
+        return redirect()->route('orders.confirmation', $order);
     }
 
     public function mount()

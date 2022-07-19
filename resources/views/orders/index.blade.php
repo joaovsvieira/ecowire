@@ -18,7 +18,15 @@
 
                             <div>
                                 <span class="inline-flex items-center px-3 py-1 text-sm rounded-full font-semibold bg-gray-100 text-gray-800">
-                                    {{ $order->presenter()->status() }}
+                                    @if ($order->payment->status == 'requires_capture')
+                                        Processando pagamento
+                                    @elseif ($order->payment->status == 'requires_confirmation')
+                                        Aguardando pagamento
+                                    @elseif ($order->payment->status == 'canceled')
+                                        Cancelado
+                                    @elseif ($order->payment->status == 'succeeded')
+                                        {{ $order->presenter()->status() }}
+                                    @endif
                                 </span>
                             </div>
                         </div>

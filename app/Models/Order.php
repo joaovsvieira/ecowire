@@ -17,31 +17,39 @@ class Order extends Model
         'placed_at',
         'packaged_at',
         'shipped_at',
+        'delivered_at',
     ];
 
     protected $casts = [
         'placed_at' => 'datetime',
         'packaged_at' => 'datetime',
         'shipped_at' => 'datetime',
+        'delivered_at' => 'datetime',
     ];
 
     public  $statuses = [
         'placed_at',
         'packaged_at',
         'shipped_at',
+        'delivered_at',
     ];
 
     public $timestamps = [
         'placed_at',
         'packaged_at',
         'shipped_at',
+        'delivered_at',
     ];
 
     public static function booted(){
         static::creating(function (Order $order) {
-            $order->placed_at = now();
             $order->uuid = (string) Str::uuid();
         });
+    }
+
+    public function payment()
+    {
+        return $this->hasOne(PaymentIntent::class);
     }
 
     public function status()

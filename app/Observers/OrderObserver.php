@@ -21,7 +21,7 @@ class OrderObserver
                 ->filter(fn ($status) => filled($status));
 
         if ($originalOrder->status() != $order->status() && $filledStatus->count()) {
-            Mail::to($order->user)->send(new OrderStatusUpdated($order));
+            Mail::to($order->email)->send(new OrderStatusUpdated($order));
         }
     }
 }

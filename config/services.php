@@ -31,4 +31,10 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'ipag' => [
+        'username' => env('IPAG_USERNAME'),
+        'password' => env('IPAG_PASSWORD'),
+        'endpoint' => env('IPAG_ENDPOINT'),
+    ],
+
 ];

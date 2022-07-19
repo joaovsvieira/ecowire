@@ -10,11 +10,20 @@ class Cart extends Model
 {
     use HasFactory;
 
+    protected $fillable = [
+        'payment_intent_id',
+    ];
+
     public static function booted()
     {
-        static::creating(function ($cart) {
+        static::creating(function (Cart $cart) {
             $cart->uuid = (string) Str::uuid();
         });
+    }
+
+    public function paymentIntent()
+    {
+        return $this->belongsTo(PaymentIntent::class);
     }
 
     public function user()

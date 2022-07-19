@@ -1,4 +1,27 @@
-<form wire:submit.prevent="checkout">
+<form x-on:submit.prevent="submit"
+      x-data="{
+            email: @entangle('accountForm.email').defer,
+
+            async submit () {
+                await $wire.callValidate()
+
+                let errorCount = await $wire.getErrorCount()
+
+               if (errorCount >= 1) {
+                    return
+               }
+
+               await $wire.confirmPayment(
+                    '{{ $paymentIntent->uuid }}', {
+                        payment_method: {
+                            card: this.cardElement,
+                            billing_details: { email: this.email }
+                        }
+                    }
+               )
+            },
+      }"
+>
     <div class="overflow-hidden sm:rounded-lg grid grid-cols-6 grid-flow-col gap-4">
         <div class="p-6 bg-white border-b border-gray-200 col-span-3 self-start space-y-6">
             @guest
@@ -82,7 +105,26 @@
                 <div class="font-semibold text-lg">Payment</div>
 
                 <div>
-                    Stripe card form
+                    {{ $paymentIntent->uuid }}
+                    <fieldset>
+                        <legend class="block text-sm font-medium text-gray-700">Card Details</legend>
+                        <div class="mt-1 bg-white rounded-md shadow-sm -space-y-px">
+                            <div>
+                                <label for="card-number" class="sr-only">Card number</label>
+                                <input type="text" name="card-number" id="card-number" class="focus:ring-indigo-500 focus:border-indigo-500 relative block w-full rounded-none rounded-t-md bg-transparent focus:z-10 sm:text-sm border-gray-300" placeholder="Card number">
+                            </div>
+                            <div class="flex -space-x-px">
+                                <div class="w-1/2 flex-1 min-w-0">
+                                    <label for="card-expiration-date" class="sr-only">Expiration date</label>
+                                    <input type="text" name="card-expiration-date" id="card-expiration-date" class="focus:ring-indigo-500 focus:border-indigo-500 relative block w-full rounded-none rounded-bl-md bg-transparent focus:z-10 sm:text-sm border-gray-300" placeholder="MM / YY">
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <label for="card-cvc" class="sr-only">CVC</label>
+                                    <input type="text" name="card-cvc" id="card-cvc" class="focus:ring-indigo-500 focus:border-indigo-500 relative block w-full rounded-none rounded-br-md bg-transparent focus:z-10 sm:text-sm border-gray-300" placeholder="CVC">
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
                 </div>
             </div>
         </div>

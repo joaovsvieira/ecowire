@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Models\Order;
+use App\Observers\OrderObserver;
 use Illuminate\Support\Collection;
 use Illuminate\Support\ServiceProvider;
 use MeiliSearch\MeiliSearch;
@@ -47,5 +49,7 @@ class AppServiceProvider extends ServiceProvider
                 return $value;
             });
         });
+
+        Order::observe(OrderObserver::class);
     }
 }

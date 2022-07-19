@@ -3,9 +3,12 @@
 namespace App\Http\Livewire;
 
 use App\Cart\Contracts\CartInterface;
+use App\Mail\OrderCreated;
 use App\Models\Order;
+use App\Models\PaymentIntent;
 use App\Models\ShippingAddress;
 use App\Models\ShippingType;
+use Illuminate\Support\Facades\Mail;
 use Livewire\Component;
 
 class Checkout extends Component
@@ -61,9 +64,37 @@ class Checkout extends Component
         return auth()->user()?->shippingAddresses;
     }
 
+    public function getShippingTypeProperty()
+    {
+        return $this->shippingTypes->find($this->shippingTypeId);
+    }
+
+    public function getTotalProperty(CartInterface $cart)
+    {
+        return $cart->subtotal() + $this->shippingType->price;
+    }
+
+    public function callValidate()
+    {
+        $this->validate();
+    }
+
+    public function getErrorCount()
+    {
+        return $this->getErrorBag()->count();
+    }
+
     public function checkout(CartInterface $cart)
     {
         $this->validate();
+
+        if (!$this->getPaymentIntent($cart)->status === 'succeeded') {
+            $this->dispatchBrowserEvent('notification', [
+                'body' => 'Your payment failed.',
+            ]);
+
+            return;
+        }
 
         $this->shippingAddress = ShippingAddress::query();
 
@@ -106,11 +137,47 @@ class Checkout extends Component
 
         $cart->removeAll();
 
+        Mail::to($order->email)->send(new OrderCreated($order));
+
+        $cart->destroy();
+
         if (!auth()->user()) {
             return redirect()->route('orders.confirmation', $order);
         }
 
         return redirect()->route('orders');
+    }
+
+    public function confirmPayment($paymentIntentId, $params, CartInterface $cart)
+    {
+        $paymentIntent = $this->getPaymentIntent($cart);
+
+        $response = app('ipag')->paymentIntents($paymentIntent->getFormattedAttributes());
+
+        dd($paymentIntent->getFormattedAttributes(), $response);
+    }
+
+    public function getPaymentIntent(CartInterface $cart)
+    {
+        if ($cart->hasPaymentIntent()) {
+           $paymentIntent = PaymentIntent::find($cart->getPaymentIntentId());
+
+           if ($paymentIntent->status != 'succeeded') {
+                $paymentIntent->update([
+                    'amount' => (int) $this->total,
+                ]);
+           }
+
+           return $paymentIntent;
+        }
+
+        $paymentIntent = PaymentIntent::create([
+            'amount'   => (int) $this->total,
+        ]);
+
+        $cart->updatePaymentIntent($paymentIntent->id);
+
+        return $paymentIntent;
     }
 
     public function mount()
@@ -123,20 +190,11 @@ class Checkout extends Component
         }
     }
 
-    public function getShippingTypeProperty()
-    {
-        return $this->shippingTypes->find($this->shippingTypeId);
-    }
-
-    public function getTotalProperty(CartInterface $cart)
-    {
-        return $cart->subtotal() + $this->shippingType->price;
-    }
-
     public function render(CartInterface $cart)
     {
         return view('livewire.checkout', [
             'cart' => $cart,
+            'paymentIntent' => $this->getPaymentIntent($cart),
         ]);
     }
 }

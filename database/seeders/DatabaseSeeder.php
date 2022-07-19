@@ -4,6 +4,9 @@ namespace Database\Seeders;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ShippingType;
+use App\Models\Stock;
+use App\Models\Variation;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -58,13 +61,45 @@ class DatabaseSeeder extends Seeder
 
         $products = [
             [
-                'name' => 'Product 1',
-                'slug' => 'product-1',
+                'name' => 'Nike Air Force 1',
+                'slug' => 'nike-air-force-1',
                 'description' => 'This is a example product',
-                'price' => 100,
+                'price' => 7500,
+                'live_at' => now(),
             ],
         ];
         Product::insert($products);
+
+        $shipping_types = [
+            [
+                'name' => 'UPS Free',
+                'price' => 0,
+            ],
+            [
+                'name' => 'UPS Standart',
+                'price' => 2000,
+            ],
+        ];
+        ShippingType::insert($shipping_types);
+
+        $variations = [
+            [
+                'product_id' => 1,
+                'name' => 'Black',
+                'price' => 7500,
+                'type' => 'color',
+                'sku' => 'BLACK',
+            ],
+        ];
+        Variation::insert($variations);
+
+        $stocks = [
+            [
+                'variation_id' => 1,
+                'amount' => 20,
+            ],
+        ];
+        Stock::insert($stocks);
 
          \App\Models\User::factory()->create([
              'name' => 'Super Admin',
